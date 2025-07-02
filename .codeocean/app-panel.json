@@ -1,0 +1,47 @@
+{
+	"version": 1,
+	"parameters": [
+		{
+			"id": "7P9fIzVbmhaqtMtn",
+			"name": "chunk duration h",
+			"description": "Duration of each chunk in h. Use -1 to turn off chunking",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "1"
+		},
+		{
+			"id": "9MA0f2dNJIBWtxhv",
+			"name": "inter chunk duration h",
+			"description": "Inter-chunk duration of each chunk in h",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "24"
+		},
+		{
+			"id": "lykUtMKaNkgaUeDv",
+			"name": "split groups",
+			"description": "Whether to process different groups separately.",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
+			"id": "4wjTbofmZ7zn3ZPy",
+			"name": "start time h",
+			"description": "Start time in h.",
+			"type": "text",
+			"value_type": "string"
+		},
+		{
+			"id": "l76Ag0nvZ9S0OGeg",
+			"name": "end time h",
+			"description": "End time in h.",
+			"type": "text",
+			"value_type": "string"
+		}
+	]
+}
