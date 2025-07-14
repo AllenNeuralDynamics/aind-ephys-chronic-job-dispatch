@@ -2,6 +2,14 @@
 	"version": 1,
 	"parameters": [
 		{
+			"id": "jpmbDyrA2OpRxALP",
+			"name": "s3 path",
+			"description": "Path to s3 compressed zarr folder",
+			"type": "text",
+			"value_type": "string",
+			"required": true
+		},
+		{
 			"id": "7P9fIzVbmhaqtMtn",
 			"name": "chunk duration h",
 			"description": "Duration of each chunk in h. Use -1 to turn off chunking",

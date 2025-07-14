@@ -18,6 +18,10 @@
 		"pip": {
 			"packages": [
 				{
+					"name": "s3fs",
+					"version": "2025.5.1"
+				},
+				{
 					"name": "spikeinterface[full]",
 					"version": "0.102.3"
 				}

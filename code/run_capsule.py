@@ -11,6 +11,10 @@ import warnings
 from pathlib import Path
 import json
 import logging
+import boto3
+import boto3
+from botocore import UNSIGNED
+from botocore.client import Config
 
 
 # SPIKEINTERFACE
@@ -26,6 +30,11 @@ results_folder = Path("../results")
 
 # Define argument parser
 parser = argparse.ArgumentParser(description="Dispatch jobs for CHRONIC ephys pipeline")
+
+s3_path_group = parser.add_mutually_exclusive_group()
+s3_path_help = "Path to s3 compressed zarr folder."
+s3_path_group.add_argument("--s3-path", default=None, help=s3_path_help)
+s3_path_group.add_argument("static_s3_path", nargs="?", default=None, help=s3_path_help)
 
 chunk_duration_group = parser.add_mutually_exclusive_group()
 chunk_duration_help = "Duration of each chunk in h. Use -1 to turn off chunking"
@@ -55,6 +64,8 @@ end_hour_group.add_argument("static_end_time_h", nargs="?", default=None, help=e
 if __name__ == "__main__":
     args = parser.parse_args()
 
+    S3_PATH = args.static_s3_path or args.s3_path
+    assert S3_PATH is not None, "S3 path must be provided"
     CHUNK_DURATION = float(args.static_chunk_duration or args.chunk_duration)
     INTER_CHUNK_DURATION = float(args.static_inter_chunk_duration or args.inter_chunk_duration)
     SPLIT_GROUPS = (
@@ -70,6 +81,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
 
     logging.info(f"Running job dispatcher with the following parameters:")
+    logging.info(f"\tS3 PATH: {S3_PATH}")
     logging.info(f"\tCHUNK_DURATION: {CHUNK_DURATION}")
     logging.info(f"\tINTER_CHUNK_DURATION: {INTER_CHUNK_DURATION}")
     logging.info(f"\tSTART_TIME_H: {START_TIME_H}")
@@ -78,55 +90,53 @@ if __name__ == "__main__":
     logging.info(f"Parsing CHRONIC input folder")
     recording_dict = {}
 
-    ecephys_session_folders = [p for p in data_folder.iterdir() if p.is_dir() and (p / "ecephys").is_dir()]
-    ecephys_session_folder = ecephys_session_folders[0]
+    if S3_PATH.endswith("/"):
+        s3_path = S3_PATH[:-1]
+    else:
+        s3_path = S3_PATH
 
-    session_name = None
-    if (ecephys_session_folder / "data_description.json").is_file():
-        data_description = json.load(open(ecephys_session_folder / "data_description.json", "r"))
-        session_name = data_description["name"]
-
-    # in the AIND pipeline, the session folder is mapped to
-    ecephys_folder = ecephys_session_folder / "ecephys"
-    ecephys_compressed_folder = ecephys_folder / "ecephys_compressed"
+    slash_splits = s3_path.split("//")[1].split("/")
+    bucket_name = slash_splits[0]
+    session_name = slash_splits[1]
+    stream_name = slash_splits[-1]
+    session_s3_path = s3_path[:s3_path.find(slash_splits[3])]
 
     logging.info(f"\tSession name: {session_name}")
 
-    for zarr_folder in ecephys_compressed_folder.iterdir():
-        recording_name = f"{zarr_folder.stem}_recording"
-        recording_full = si.load(zarr_folder)
+    recording_name = f"{stream_name}_recording"
+    recording_full = si.load(s3_path)
 
-        logging.info(f"\tLoaded recording: {recording_full}")
+    logging.info(f"\tLoaded recording: {recording_full}")
 
-        if START_TIME_H is not None or END_TIME_H is not None:
-            start_time_s = float(START_TIME_H) * 3600 if START_TIME_H else 0
-            end_time_s = float(END_TIME_H) * 3600 if END_TIME_H else recording_full.get_duration()
-            recording = recording_full.time_slice(start_time=start_time_s, end_time=end_time_s)
-        else:
-            recording = recording_full
+    if START_TIME_H is not None or END_TIME_H is not None:
+        start_time_s = float(START_TIME_H) * 3600 if START_TIME_H else 0
+        end_time_s = float(END_TIME_H) * 3600 if END_TIME_H else recording_full.get_duration()
+        recording = recording_full.time_slice(start_time=start_time_s, end_time=end_time_s)
+    else:
+        recording = recording_full
 
-        if CHUNK_DURATION > 0:
-            assert INTER_CHUNK_DURATION > CHUNK_DURATION
-            chunk_duration_s = CHUNK_DURATION * 3600
-            inter_chunk_duration_s = INTER_CHUNK_DURATION * 3600
-            start_time = recording.get_start_time()
-            end_time = recording.get_end_time()
-            start_times = np.arange(start_time, end_time, inter_chunk_duration_s)
+    if CHUNK_DURATION > 0:
+        assert INTER_CHUNK_DURATION > CHUNK_DURATION
+        chunk_duration_s = CHUNK_DURATION * 3600
+        inter_chunk_duration_s = INTER_CHUNK_DURATION * 3600
+        start_time = recording.get_start_time()
+        end_time = recording.get_end_time()
+        start_times = np.arange(start_time, end_time, inter_chunk_duration_s)
 
-            logging.info(f"\tConcatenating {len(start_times)} chunks")
+        logging.info(f"\tConcatenating {len(start_times)} chunks")
 
-            recording_list = []
-            for start_time in start_times:
-                rec_sub = recording.time_slice(start_time=start_time, end_time=start_time + chunk_duration_s)
-                recording_list.append(rec_sub)
+        recording_list = []
+        for start_time in start_times:
+            rec_sub = recording.time_slice(start_time=start_time, end_time=start_time + chunk_duration_s)
+            recording_list.append(rec_sub)
 
-                # final concatenation
-                recording_concat = si.concatenate_recordings(recording_list)
-        else:
-            recording_concat = recording
+            # final concatenation
+            recording_concat = si.concatenate_recordings(recording_list)
+    else:
+        recording_concat = recording
         
-        recording_dict[(session_name, recording_name)] = {}
-        recording_dict[(session_name, recording_name)]["raw"] = recording_concat
+    recording_dict[(session_name, recording_name)] = {}
+    recording_dict[(session_name, recording_name)]["raw"] = recording_concat
 
 
     # populate job dict list
@@ -152,6 +162,7 @@ if __name__ == "__main__":
                         recording_name=str(recording_name_group),
                         recording_dict=recording_group.to_dict(recursive=True, relative_to=data_folder),
                         duration=duration,
+                        session_s3_path=session_s3_path,
                         skip_times=False,
                         debug=False,
                     )
@@ -164,6 +175,7 @@ if __name__ == "__main__":
                     recording_name=str(recording_name_segment),
                     recording_dict=recording.to_dict(recursive=True, relative_to=data_folder),
                     duration=duration,
+                    session_s3_path=session_s3_path,
                     skip_times=False,
                     debug=False,
                 )
@@ -177,4 +189,23 @@ if __name__ == "__main__":
     for i, job_dict in enumerate(job_dict_list):
         with open(results_folder / f"job_{i}.json", "w") as f:
             json.dump(job_dict, f, indent=4, cls=SIJsonEncoder)
+
+    ecephys_metadata_folder = results_folder / "ecephys_session"
+    ecephys_metadata_folder.mkdir()
+
+    metadata_json_files = ["data_description", "subject", "rig", "session", "processing"]
+    
+    # Create an anonymous S3 client
+    s3 = boto3.client('s3')
+    s3_unsigned = boto3.client('s3', config=Config(signature_version=UNSIGNED))
+    for metadata_file_name in metadata_json_files:
+        try:
+            key = f"{session_name}/{metadata_file_name}.json"
+            s3.download_file(bucket_name, key, ecephys_metadata_folder / f'{metadata_file_name}.json')
+        except Exception as e:
+            # try unsigned
+            try:
+                s3_unsigned.download_file(bucket_name, key, ecephys_metadata_folder / f'{metadata_file_name}.json')
+            except Exception as e2:
+                logging.info(f"Could not download {metadata_file_name}.json. Error: {e2}")
     logging.info(f"Generated {len(job_dict_list)} job config files")
