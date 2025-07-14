@@ -18,6 +18,9 @@
 		"pip": {
 			"packages": [
 				{
+					"name": "boto3"
+				},
+				{
 					"name": "s3fs",
 					"version": "2025.5.1"
 				},

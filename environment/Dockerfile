@@ -1,4 +1,4 @@
-# hash:sha256:ea5d229a697fee21797ad9ea7a9949d14a9d17a5f5dd12bf323ac2648dfabce5
+# hash:sha256:aaedafe8f991184238d9230eceb2cd4f732812c704722992de159b04f24fcbe6
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/mambaforge3:24.5.0-0-python3.12.4-ubuntu22.04
 
@@ -13,6 +13,7 @@ RUN conda install -y \
     && conda clean -ya
 
 RUN pip install -U --no-cache-dir \
+    boto3 \
     s3fs==2025.5.1 \
     spikeinterface[full]==0.102.3
 
