@@ -98,6 +98,7 @@ if __name__ == "__main__":
     bucket_name = slash_splits[0]
     session_name = slash_splits[1]
     stream_name = slash_splits[-1]
+    stream_name = stream_name[:stream_name.find(".zarr")]
     session_s3_path = s3_path[:s3_path.find(slash_splits[3])]
 
     logging.info(f"\tSession name: {session_name}")
