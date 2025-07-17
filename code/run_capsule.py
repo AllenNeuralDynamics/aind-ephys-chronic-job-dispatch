@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     if START_TIME_H is not None or END_TIME_H is not None:
         start_time_s = float(START_TIME_H) * 3600 if START_TIME_H else 0
-        end_time_s = float(END_TIME_H) * 3600 if END_TIME_H else recording_full.get_duration()
+        end_time_s = float(END_TIME_H) * 3600 if END_TIME_H else recording_full.get_end_time()
         recording = recording_full.time_slice(start_time=start_time_s, end_time=end_time_s)
     else:
         recording = recording_full
