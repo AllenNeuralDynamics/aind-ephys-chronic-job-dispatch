@@ -19,6 +19,7 @@ from botocore.client import Config
 # SPIKEINTERFACE
 import spikeinterface as si
 import spikeinterface.extractors as se
+import spikeinterface.preprocessing as spre
 
 from spikeinterface.core.core_tools import SIJsonEncoder
 
@@ -60,6 +61,11 @@ end_hour_help = "End time in h."
 end_hour_group.add_argument("--end-time-h", default=None, help=end_hour_help)
 end_hour_group.add_argument("static_end_time_h", nargs="?", default=None, help=end_hour_help)
 
+invert_group = parser.add_mutually_exclusive_group()
+invert_help = "Whether to invert the signal"
+invert_group.add_argument("--invert", action="store_true", help=invert_help)
+invert_group.add_argument("static_invert", nargs="?", default="false", help=invert_help)
+
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -76,6 +82,7 @@ if __name__ == "__main__":
     END_TIME_H = args.static_end_time_h or args.end_time_h
     if END_TIME_H is not None and END_TIME_H == "":
         END_TIME_H = None
+    INVERT = True if args.static_invert and args.static_invert.lower() == "true" else args.invert
 
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
 
@@ -85,6 +92,7 @@ if __name__ == "__main__":
     logging.info(f"\tINTER_CHUNK_DURATION: {INTER_CHUNK_DURATION}")
     logging.info(f"\tSTART_TIME_H: {START_TIME_H}")
     logging.info(f"\tEND_TIME_H: {END_TIME_H}")
+    logging.info(f"\tINVERT: {INVERT}")
 
     logging.info(f"Parsing CHRONIC input folder")
     recording_dict = {}
@@ -105,6 +113,10 @@ if __name__ == "__main__":
 
     recording_name = f"{stream_name}_recording"
     recording_full = si.load(s3_path)
+    # invert the signal
+    if INVERT:
+        logging.info(f"\tInverting signal polarity")
+        recording_full = spre.scale(recording_full, gain=-1)
 
     logging.info(f"\tLoaded recording: {recording_full}")
 

@@ -50,6 +50,18 @@
 			"description": "End time in h.",
 			"type": "text",
 			"value_type": "string"
+		},
+		{
+			"id": "FZTohj3gxvdFaRmX",
+			"name": "invert polarity",
+			"description": "Invert signal polarity",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "false",
+			"extra_data": [
+				"false",
+				"true"
+			]
 		}
 	]
 }
