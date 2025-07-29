@@ -180,7 +180,7 @@ if __name__ == "__main__":
                     job_dict = dict(
                         session_name=session_name,
                         recording_name=str(recording_name_group),
-                        recording_dict=recording_group.to_dict(recursive=True, relative_to=data_folder),
+                        recording_dict=recording_group.to_dict(recursive=True),
                         duration=duration,
                         session_s3_path=session_s3_path,
                         skip_times=False,
@@ -193,7 +193,7 @@ if __name__ == "__main__":
                 job_dict = dict(
                     session_name=session_name,
                     recording_name=str(recording_name_segment),
-                    recording_dict=recording.to_dict(recursive=True, relative_to=data_folder),
+                    recording_dict=recording.to_dict(recursive=True),
                     duration=duration,
                     session_s3_path=session_s3_path,
                     skip_times=False,
