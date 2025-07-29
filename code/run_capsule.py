@@ -126,12 +126,13 @@ if __name__ == "__main__":
         logging.info(f"\tInverting signal polarity")
         recording_full = spre.scale(recording_full, gain=-1)
 
-    logging.info(f"\tLoaded recording: {recording_full}")
+    logging.info(f"\tLoaded full recording: {recording_full}")
 
     if START_TIME_H is not None or END_TIME_H is not None:
         start_time_s = float(START_TIME_H) * 3600 if START_TIME_H else 0
         end_time_s = float(END_TIME_H) * 3600 if END_TIME_H else recording_full.get_end_time()
         recording = recording_full.time_slice(start_time=start_time_s, end_time=end_time_s)
+        logging.info(f"\tTime-sliced recording: {recording}")
     else:
         recording = recording_full
 
@@ -152,6 +153,7 @@ if __name__ == "__main__":
 
             # final concatenation
             recording_concat = si.concatenate_recordings(recording_list)
+        logging.info(f"\tConcatenated recording: {recording_concat}")
     else:
         recording_concat = recording
         
