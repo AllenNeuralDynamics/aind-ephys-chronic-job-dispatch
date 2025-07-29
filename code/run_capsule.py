@@ -66,6 +66,7 @@ invert_help = "Whether to invert the signal"
 invert_group.add_argument("--invert", action="store_true", help=invert_help)
 invert_group.add_argument("static_invert", nargs="?", default="false", help=invert_help)
 
+
 if __name__ == "__main__":
     args = parser.parse_args()
 
@@ -97,17 +98,24 @@ if __name__ == "__main__":
     logging.info(f"Parsing CHRONIC input folder")
     recording_dict = {}
 
+    # Create an anonymous S3 client
+    s3 = boto3.client('s3')
+    s3_unsigned = boto3.client('s3', config=Config(signature_version=UNSIGNED))
+
     if S3_PATH.endswith("/"):
         s3_path = S3_PATH[:-1]
     else:
         s3_path = S3_PATH
+
+    # add ecephys/ecephys_compressed
+    session_s3_path = s3_path
+    s3_path = f"{s3_path}/ecephys/ecephys_compressed/experiment1_AmplifierData.zarr"
 
     slash_splits = s3_path.split("//")[1].split("/")
     bucket_name = slash_splits[0]
     session_name = slash_splits[1]
     stream_name = slash_splits[-1]
     stream_name = stream_name[:stream_name.find(".zarr")]
-    session_s3_path = s3_path[:s3_path.find(slash_splits[3])]
 
     logging.info(f"\tSession name: {session_name}")
 
@@ -206,10 +214,6 @@ if __name__ == "__main__":
     ecephys_metadata_folder.mkdir()
 
     metadata_json_files = ["data_description", "subject", "rig", "session", "processing"]
-    
-    # Create an anonymous S3 client
-    s3 = boto3.client('s3')
-    s3_unsigned = boto3.client('s3', config=Config(signature_version=UNSIGNED))
     for metadata_file_name in metadata_json_files:
         try:
             key = f"{session_name}/{metadata_file_name}.json"

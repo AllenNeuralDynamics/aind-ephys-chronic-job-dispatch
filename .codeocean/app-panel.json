@@ -4,7 +4,7 @@
 		{
 			"id": "jpmbDyrA2OpRxALP",
 			"name": "s3 path",
-			"description": "Path to s3 compressed zarr folder",
+			"description": "Path to s3 session (e.g., s3://aind-open-bucket/ecephys_888888_2025-07-28_11-12-13))",
 			"type": "text",
 			"value_type": "string",
 			"required": true
