@@ -148,7 +148,8 @@ if __name__ == "__main__":
 
         recording_list = []
         for start_time in start_times:
-            rec_sub = recording.time_slice(start_time=start_time, end_time=start_time + chunk_duration_s)
+            end_time_ = np.min([start_time + chunk_duration_s, end_time])
+            rec_sub = recording.time_slice(start_time=start_time, end_time=end_time_)
             recording_list.append(rec_sub)
 
             # final concatenation
