@@ -147,20 +147,29 @@ if __name__ == "__main__":
         logging.info(f"\tConcatenating {len(start_times)} chunks")
 
         recording_list = []
+        time_concat_info = []
         for start_time in start_times:
             end_time_ = np.min([start_time + chunk_duration_s, end_time])
             rec_sub = recording.time_slice(start_time=start_time, end_time=end_time_)
+            time_info = {
+                "t_start": rec_sub.get_start_time(),
+                "t_end": rec_sub.get_end_time(),
+                "num_samples": rec_sub.get_num_samples(),
+            }
+            time_concat_info.append(time_info)
             recording_list.append(rec_sub)
 
-            # final concatenation
-            recording_concat = si.concatenate_recordings(recording_list)
+        # final concatenation
+        recording_concat = si.concatenate_recordings(recording_list)
         logging.info(f"\tConcatenated recording: {recording_concat}")
     else:
         recording_concat = recording
+        time_info = None
         
     recording_dict[(session_name, recording_name)] = {}
     recording_dict[(session_name, recording_name)]["raw"] = recording_concat
-
+    if time_concat_info is not None:
+        recording_dict[(session_name, recording_name)]["time_concat_info"] = time_concat_info
 
     # populate job dict list
     job_dict_list = []
@@ -168,13 +177,19 @@ if __name__ == "__main__":
     for session_recording_name in recording_dict:
         session_name, recording_name = session_recording_name
         recording = recording_dict[session_recording_name]["raw"]
+        time_concat_info = recording_dict[(session_name, recording_name)].get("time_concat_info")
 
         recordings = [recording]
+        if time_concat_info is not None:
+            time_concat_info_list = [time_concat_info]
+        else:
+            time_concat_info_list = [None]
 
         for recording_index, recording in enumerate(recordings):
             recording_name_segment = f"{recording_name}{recording_index + 1}"
 
             duration = np.round(recording.get_total_duration(), 2)
+            time_concat_info = time_concat_info_list[recording_index]
 
             # if multiple channel groups, process in parallel
             if SPLIT_GROUPS and len(np.unique(recording.get_channel_groups())) > 1:
@@ -190,6 +205,9 @@ if __name__ == "__main__":
                         debug=False,
                     )
                     rec_str = f"\t{recording_name_group}\n\t\tDuration {duration} s - Num. channels: {recording_group.get_num_channels()}"
+                    if time_concat_info is not None:
+                        job_dict["time_concat_info"] = time_concat_info
+                        rec_str += " (has time concat info)"
                     logging.info(rec_str)
                     job_dict_list.append(job_dict)
             else:
@@ -203,6 +221,9 @@ if __name__ == "__main__":
                     debug=False,
                 )
                 rec_str = f"\t{recording_name_segment}\n\t\tDuration: {duration} s - Num. channels: {recording.get_num_channels()}"
+                if time_concat_info is not None:
+                    job_dict["time_concat_info"] = time_concat_info
+                    rec_str += " (has time concat info)"
                 logging.info(rec_str)
                 job_dict_list.append(job_dict)
 
