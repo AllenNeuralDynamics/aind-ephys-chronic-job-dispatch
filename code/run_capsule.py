@@ -136,6 +136,7 @@ if __name__ == "__main__":
     else:
         recording = recording_full
 
+    time_concat_info = None
     if CHUNK_DURATION > 0:
         assert INTER_CHUNK_DURATION > CHUNK_DURATION
         chunk_duration_s = CHUNK_DURATION * 3600
