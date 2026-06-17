@@ -121,6 +121,7 @@ if __name__ == "__main__":
 
     recording_name = f"{stream_name}_recording"
     recording_full = si.load(s3_path)
+    fs = recording_full.sampling_frequency
     # invert the signal
     if INVERT:
         logging.info(f"\tInverting signal polarity")
@@ -131,7 +132,10 @@ if __name__ == "__main__":
     if START_TIME_H is not None or END_TIME_H is not None:
         start_time_s = float(START_TIME_H) * 3600 if START_TIME_H else 0
         end_time_s = float(END_TIME_H) * 3600 if END_TIME_H else recording_full.get_end_time()
-        recording = recording_full.time_slice(start_time=start_time_s, end_time=end_time_s)
+        # We avoid time_slice because it requires reading the entire time vector in mem
+        start_frame = int(start_time_s * fs)
+        end_frame = int(end_time_s * fs)
+        recording = recording_full.frame_slice(start_frame=start_frame, end_frame=end_frame)
         logging.info(f"\tTime-sliced recording: {recording}")
     else:
         recording = recording_full
@@ -143,15 +147,17 @@ if __name__ == "__main__":
         inter_chunk_duration_s = INTER_CHUNK_DURATION * 3600
         start_time = recording.get_start_time()
         end_time = recording.get_end_time()
-        start_times = np.arange(start_time, end_time, inter_chunk_duration_s)
+        start_times = np.arange(0, end_time - start_time, inter_chunk_duration_s)
 
         logging.info(f"\tConcatenating {len(start_times)} chunks")
 
         recording_list = []
         time_concat_info = []
         for start_time in start_times:
-            end_time_ = np.min([start_time + chunk_duration_s, end_time])
-            rec_sub = recording.time_slice(start_time=start_time, end_time=end_time_)
+            end_time_ = np.min([start_time + chunk_duration_s, end_time - start_time])
+            start_frame = int(start_time * fs)
+            end_frame = int(end_time_ * fs)
+            rec_sub = recording.frame_slice(start_frame=start_frame, end_frame=end_frame)
             time_info = {
                 "t_start": rec_sub.get_start_time(),
                 "t_end": rec_sub.get_end_time(),
