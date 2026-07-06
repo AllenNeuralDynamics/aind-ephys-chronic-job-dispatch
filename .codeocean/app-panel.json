@@ -52,6 +52,18 @@
 			"value_type": "string"
 		},
 		{
+			"id": "tmN0DWfBZheKVFUc",
+			"name": "skip timestamps",
+			"description": "Skips timestamps for testing",
+			"type": "list",
+			"value_type": "string",
+			"default_value": "true",
+			"extra_data": [
+				"true",
+				"false"
+			]
+		},
+		{
 			"id": "FZTohj3gxvdFaRmX",
 			"name": "invert polarity",
 			"description": "Invert signal polarity",

@@ -61,6 +61,11 @@ end_hour_help = "End time in h."
 end_hour_group.add_argument("--end-time-h", default=None, help=end_hour_help)
 end_hour_group.add_argument("static_end_time_h", nargs="?", default=None, help=end_hour_help)
 
+skip_times_group = parser.add_mutually_exclusive_group()
+skip_times_help = "Whether to skip timestamps for processing"
+skip_times_group.add_argument("--skip-times", action="store_true", help=skip_times_help)
+skip_times_group.add_argument("static_skip_times", nargs="?", default="false", help=skip_times_help)
+
 invert_group = parser.add_mutually_exclusive_group()
 invert_help = "Whether to invert the signal"
 invert_group.add_argument("--invert", action="store_true", help=invert_help)
@@ -83,6 +88,7 @@ if __name__ == "__main__":
     END_TIME_H = args.static_end_time_h or args.end_time_h
     if END_TIME_H is not None and END_TIME_H == "":
         END_TIME_H = None
+    SKIP_TIMES = True if args.static_skip_times and args.static_skip_times.lower() == "true" else args.skip_times
     INVERT = True if args.static_invert and args.static_invert.lower() == "true" else args.invert
 
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
@@ -208,7 +214,7 @@ if __name__ == "__main__":
                         recording_dict=recording_group.to_dict(recursive=True),
                         duration=duration,
                         session_s3_path=session_s3_path,
-                        skip_times=False,
+                        skip_times=SKIP_TIMES,
                         debug=False,
                     )
                     rec_str = f"\t{recording_name_group}\n\t\tDuration {duration} s - Num. channels: {recording_group.get_num_channels()}"
@@ -224,7 +230,7 @@ if __name__ == "__main__":
                     recording_dict=recording.to_dict(recursive=True),
                     duration=duration,
                     session_s3_path=session_s3_path,
-                    skip_times=False,
+                    skip_times=SKIP_TIMES,
                     debug=False,
                 )
                 rec_str = f"\t{recording_name_segment}\n\t\tDuration: {duration} s - Num. channels: {recording.get_num_channels()}"
