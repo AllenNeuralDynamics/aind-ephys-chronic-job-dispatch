@@ -71,6 +71,15 @@ invert_help = "Whether to invert the signal"
 invert_group.add_argument("--invert", action="store_true", help=invert_help)
 invert_group.add_argument("static_invert", nargs="?", default="false", help=invert_help)
 
+# parse which shanks/recording groups to process
+shank_selection_group = parser.add_mutually_exclusive_group()
+shank_selection_help = (
+    "Comma-separated list of channel group (shank) IDs to process, e.g. '0,2'. "
+    "Use 'all' (default) to process all available groups."
+)
+shank_selection_group.add_argument("--shank-selection", default="all", help=shank_selection_help)
+shank_selection_group.add_argument("static_shank_selection", nargs="?", default=None, help=shank_selection_help)
+
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -90,6 +99,7 @@ if __name__ == "__main__":
         END_TIME_H = None
     SKIP_TIMES = True if args.static_skip_times and args.static_skip_times.lower() == "true" else args.skip_times
     INVERT = True if args.static_invert and args.static_invert.lower() == "true" else args.invert
+    SHANK_SELECTION = args.static_shank_selection or args.shank_selection
 
     logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
 
@@ -100,6 +110,7 @@ if __name__ == "__main__":
     logging.info(f"\tSTART_TIME_H: {START_TIME_H}")
     logging.info(f"\tEND_TIME_H: {END_TIME_H}")
     logging.info(f"\tINVERT: {INVERT}")
+    logging.info(f"\tSHANK_SELECTION: {SHANK_SELECTION}")
 
     logging.info(f"Parsing CHRONIC input folder")
     recording_dict = {}
@@ -206,7 +217,19 @@ if __name__ == "__main__":
 
             # if multiple channel groups, process in parallel
             if SPLIT_GROUPS and len(np.unique(recording.get_channel_groups())) > 1:
+                
+                # Process groups based on shank selection inputs
+                if SHANK_SELECTION is not None and SHANK_SELECTION.lower() != "all":
+                    selected_groups = [g.strip() for g in SHANK_SELECTION.split(",")]
+                else:
+                    selected_groups = None  # None means "process all"
+
                 for group_name, recording_group in recording.split_by("group").items():
+                    # Skip group if it is not in selected groups
+                    if selected_groups is not None and str(group_name) not in selected_groups:
+                        logging.info(f"\tSkipping group {group_name} (not in shank selection)")
+                        continue
+
                     recording_name_group = f"{recording_name_segment}_group{group_name}"
                     job_dict = dict(
                         session_name=session_name,

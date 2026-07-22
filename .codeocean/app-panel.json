@@ -74,6 +74,15 @@
 				"false",
 				"true"
 			]
+		},
+		{
+			"id": "6TKIHJObEqSB1z4K",
+			"name": "shank selection",
+			"description": "recording group(s)/shank(s) to process",
+			"help_text": "\"Comma-separated list of channel group (shank) IDs to process, e.g. '0,1,2,3'. Use 'all' (default) to process all available groups.\" Shank IDs are zero indexed. ",
+			"type": "text",
+			"value_type": "string",
+			"default_value": "all"
 		}
 	]
 }
