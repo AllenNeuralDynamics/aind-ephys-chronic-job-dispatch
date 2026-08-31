@@ -174,6 +174,8 @@ if __name__ == "__main__":
             end_time_ = np.min([start_time + chunk_duration_s, end_time - start_time])
             start_frame = int(start_time * fs)
             end_frame = min(int(end_time_ * fs), recording.get_num_samples())
+            if end_frame <= start_frame:
+                continue
             rec_sub = recording.frame_slice(start_frame=start_frame, end_frame=end_frame)
             time_info = {
                 "t_start": rec_sub.get_start_time(),
