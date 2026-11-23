@@ -57,7 +57,7 @@
 			"description": "Skips timestamps for testing",
 			"type": "list",
 			"value_type": "string",
-			"default_value": "false",
+			"default_value": "true",
 			"extra_data": [
 				"true",
 				"false"
