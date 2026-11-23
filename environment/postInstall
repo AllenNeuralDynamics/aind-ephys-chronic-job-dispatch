@@ -1,4 +1,2 @@
 #!/usr/bin/env bash
 set -e
-
-pip install git+https://github.com/SpikeInterface/spikeinterface.git@2ca9a1892566679478afbb42b3fcb5bed423dad2
